@@ -1,0 +1,81 @@
+#!/bin/bash
+
+host=localhost
+port=3000
+base_url=http://$host:$port
+
+select_option(){
+	echo -e "\n"
+	case $1 in	
+		all)
+			PS3="Deseja listar todos de qual recurso: "
+			select recurse in orders
+			do
+				error_option $recurse
+				echo "" && time curl $base_url/$recurse && echo "";
+				break;
+			done			
+			;;
+			
+		search)
+			PS3="De qual recurso deseja localizar: "
+			select recurse in orders
+			do
+				error_option $recurse
+				read -p "Informe a id para localizar: " id_search
+				echo $id_search
+				if [[ $id_search == "" ]]; then echo "id inválida ";
+				else
+					echo "" && time curl $base_url/$recurse/$id_search && echo "";
+					break;
+				fi	
+			done
+			;;
+			
+		create)
+			PS3="O que deseja criar: "
+			select recurse in orders
+			do				
+				echo "" && time curl -i -H 'Content-Type: application/json' -d '{"amount": 12}' -X POST $base_url/$recurse && echo "";
+				break;
+			done
+			
+			;;
+		remove)
+			PS3="Ira deletar de qual recurso: "
+			select recurse in orders
+			do
+				error_option $recurse
+				read -p "Informe a id: " id_delete
+				if [[ $id_delete == "" ]]; then echo "id inválida ";
+				else
+					echo "" && time curl -i -H 'Content-Type: application/json' -X DELETE $base_url/$recurse/$id_delete && echo "";
+					break;
+				fi
+			done
+			;;
+		*)
+			echo "Informe uma requisição válida"
+			;;	
+	esac
+}
+
+error_option(){
+	if [[ "$1" == "" ]]; then echo "Não é uma opção válida"; exit 1; fi
+}
+
+while true
+do
+	PS3="Informa uma opação: "
+	select OPTION  in all create search remove
+	do
+		error_option $OPTION
+		select_option $OPTION
+		echo -e "\n===============\n"	
+		break;
+	done
+
+	read -p "Informe [n] para sair: " -n 1 EXIT
+	if [[ $EXIT == 'n' || $EXIT == 'N' ]]; then echo "";  exit 1; fi
+	echo -e "\n"
+done
